@@ -1,0 +1,18 @@
+{
+  "name": "instagram-server",
+  "version": "1.0.0",
+  "description": "Tiny Instagram",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "Tahmid Tanzim <tahmid.tanzim@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite3": "^4.0.9"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}
