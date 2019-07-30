@@ -1,11 +1,12 @@
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const upload = require('./middleware/upload');
 const app = express();
 const port = 8080;
 
 /* SQLite Database */
-const sqlite3 = require('sqlite3').verbose();
 let db = new sqlite3.Database('./database/instagram.db', sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
         console.error(err.message);
@@ -15,6 +16,7 @@ let db = new sqlite3.Database('./database/instagram.db', sqlite3.OPEN_READWRITE,
 
 app.use('/images', express.static('images'));
 app.use(bodyParser.json());
+app.use(cors());
 
 app.get('/followers', (req, res) => {
     if (req.query.user_id) {
@@ -22,13 +24,13 @@ app.get('/followers', (req, res) => {
             [req.query.user_id],
             (err, rows) => {
                 if (err) {
-                    res.status(400).json({message: err.message});
+                    res.status(400).json(err.message);
                 }
 
-                res.status(200).json({data: rows});
+                res.status(200).json({...rows});
             });
     } else {
-        res.status(400).json({message: 'Invalid Request'});
+        res.status(400).json('Invalid Request');
     }
 });
 
@@ -38,13 +40,13 @@ app.get('/followers/photo', (req, res) => {
             [req.query.user_id],
             (err, rows) => {
                 if (err) {
-                    res.status(400).json({message: err.message});
+                    res.status(400).json(err.message);
                 }
 
-                res.status(200).json({data: rows});
+                res.status(200).json({...rows});
             });
     } else {
-        res.status(400).json({message: 'Invalid Request'});
+        res.status(400).json('Invalid Request');
     }
 });
 
@@ -54,10 +56,10 @@ app.post('/follow', (req, res) => {
         [follower_id, user_id],
         function (err) {
             if (err) {
-                res.status(400).json({message: err.message});
+                res.status(400).json(err.message);
             }
 
-            res.status(200).json({message: 'Success'});
+            res.status(200).json('Success');
         });
 });
 
@@ -67,10 +69,10 @@ app.delete('/unfollow', (req, res) => {
         [follower_id, user_id],
         function (err) {
             if (err) {
-                res.status(400).json({message: err.message});
+                res.status(400).json(err.message);
             }
 
-            res.status(200).json({message: 'Success'});
+            res.status(200).json('Success');
         });
 });
 
@@ -86,13 +88,10 @@ app.post('/upload', upload.single('photo'), (req, res) => {
             [title, filename, size, mimetype, parseInt(owner_id), uploaded_at],
             function (err) {
                 if (err) {
-                    res.status(400).json({message: err.message});
+                    res.status(400).json(err.message);
                 }
 
-                res.status(202).json({
-                    message: 'Successfully uploaded photo.',
-                    data: {id: this.lastID, filename, title, uploaded_at: uploaded_at.getTime()}
-                });
+                res.status(202).json({id: this.lastID, filename, title, uploaded_at: uploaded_at.getTime()});
             });
     }
 });
@@ -105,10 +104,11 @@ app.get('/photos', (req, res) => {
                 if (err) {
                     console.error(err.message);
                 }
-                res.status(200).json({data: rows});
+                
+                res.status(200).json({...rows});
             });
     } else {
-        res.status(400).json({message: 'Invalid Request'});
+        res.status(400).json('Invalid Request');
     }
 });
 
@@ -120,17 +120,17 @@ app.post('/login', (req, res) => {
                 res.status(404).json({message: err.message});
             }
 
-            row ? res.status(200).json({data: row})
-                : res.status(404).json({message: `No user found with the username - ${req.body.username}`});
+            row ? res.status(200).json({...row})
+                : res.status(404).json(`No user found with the username - ${req.body.username}`);
         });
     } else {
-        res.status(400).json({message: 'Invalid username'});
+        res.status(400).json('Invalid username');
     }
 });
 
 // Respond with 404 to any routes not matching API endpoints
 app.all('/*', (req, res) => {
-    res.status(404).json({message: 'No endpoint exists at ' + req.originalUrl});
+    res.status(404).json('No endpoint exists at ' + req.originalUrl);
 });
 
 const server = app.listen(port, () => console.log(`Instagram app listening on port ${port}!`));
