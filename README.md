@@ -1,1 +1,1 @@
-# instagram-server
+# Instagram Server
