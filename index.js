@@ -17,21 +17,48 @@ app.use('/images', express.static('images'));
 app.use(bodyParser.json());
 
 app.get('/followers', (req, res) => {
-    db.serialize(() => {
-        db.all(`SELECT rowid, id, username FROM users ORDER BY id ASC`, (err, rows) => {
-            if (err) {
-                console.error(err.message);
-            }
-            res.status(200).json({data: rows});
-        });
-    });
+    if (req.query.user_id) {
+        db.all(`SELECT id, username FROM users WHERE id IN (SELECT follower_id FROM followers WHERE user_id = ?)`,
+            [req.query.user_id],
+            (err, rows) => {
+                if (err) {
+                    console.error(err.message);
+                }
+                res.status(200).json({data: rows});
+            });
+    } else {
+        res.status(400).json({message: 'Invalid Request'});
+    }
+});
 
-    // db.close((err) => {
-    //     if (err) {
-    //         return console.error(err.message);
-    //     }
-    //     console.log('Close the database connection.');
-    // });
+app.post('/follow', (req, res) => {
+    const {follower_id, user_id} = req.body;
+    db.run(`INSERT INTO followers (follower_id, user_id) VALUES (?,?,?)`,
+        [follower_id, user_id],
+        function (err) {
+            if (err) {
+                res.status(400).json({message: err.message});
+            }
+
+            res.status(200).json({
+                message: 'Success'
+            });
+        });
+});
+
+app.delete('/unfollow', (req, res) => {
+    const {follower_id, user_id} = req.body;
+    db.run(`DELETE FROM followers WHERE follower_id = ? AND user_id = ?`,
+        [follower_id, user_id],
+        function (err) {
+            if (err) {
+                res.status(400).json({message: err.message});
+            }
+
+            res.status(200).json({
+                message: 'Success'
+            });
+        });
 });
 
 app.post('/upload', upload.single('photo'), (req, res) => {
@@ -46,7 +73,6 @@ app.post('/upload', upload.single('photo'), (req, res) => {
             [title, filename, size, mimetype, parseInt(owner_id), uploaded_at],
             function (err) {
                 if (err) {
-                    console.log(err.message);
                     res.status(400).json({message: err.message});
                 }
 
