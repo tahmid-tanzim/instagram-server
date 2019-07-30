@@ -22,8 +22,25 @@ app.get('/followers', (req, res) => {
             [req.query.user_id],
             (err, rows) => {
                 if (err) {
-                    console.error(err.message);
+                    res.status(400).json({message: err.message});
                 }
+
+                res.status(200).json({data: rows});
+            });
+    } else {
+        res.status(400).json({message: 'Invalid Request'});
+    }
+});
+
+app.get('/followers/photo', (req, res) => {
+    if (req.query.user_id) {
+        db.all(`SELECT id, filename, title, uploaded_at FROM photos WHERE owner_id IN (SELECT id FROM users WHERE id IN (SELECT follower_id FROM followers WHERE user_id = ?)) ORDER BY uploaded_at DESC`,
+            [req.query.user_id],
+            (err, rows) => {
+                if (err) {
+                    res.status(400).json({message: err.message});
+                }
+
                 res.status(200).json({data: rows});
             });
     } else {
@@ -40,9 +57,7 @@ app.post('/follow', (req, res) => {
                 res.status(400).json({message: err.message});
             }
 
-            res.status(200).json({
-                message: 'Success'
-            });
+            res.status(200).json({message: 'Success'});
         });
 });
 
@@ -55,9 +70,7 @@ app.delete('/unfollow', (req, res) => {
                 res.status(400).json({message: err.message});
             }
 
-            res.status(200).json({
-                message: 'Success'
-            });
+            res.status(200).json({message: 'Success'});
         });
 });
 
@@ -120,13 +133,15 @@ app.all('/*', (req, res) => {
     res.status(404).json({message: 'No endpoint exists at ' + req.originalUrl});
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+const server = app.listen(port, () => console.log(`Instagram app listening on port ${port}!`));
 
 process.on('SIGINT', () => {
     db.close((err) => {
         if (err) {
             return console.error(err.message);
         }
-        console.log('Close Instagram database connection.');
+        console.log('\nClose Instagram database connection.');
+        server.close();
+        process.exit();
     });
 });
